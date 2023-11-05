@@ -1,24 +1,22 @@
 package com.cms.service.impl;
 
-import java.util.List;
-
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.cms.dto.PageResponseDto;
 import com.cms.dto.PostCommentRequestDto;
 import com.cms.dto.PostDto;
 import com.cms.dto.PostReactionRequestDto;
 import com.cms.dto.PostRequestDto;
-import com.cms.constants.MetaValues;
-import com.cms.dto.PageResponseDto;
 import com.cms.entity.Post;
 import com.cms.entity.PostComment;
 import com.cms.entity.PostReaction;
 import com.cms.repository.PostCommentRepository;
 import com.cms.repository.PostReactionRepository;
 import com.cms.repository.PostRepository;
+import com.cms.service.AuthService;
 import com.cms.service.PostService;
 
 import lombok.RequiredArgsConstructor;
@@ -30,12 +28,14 @@ public class PostServiceImpl implements PostService {
 	private final PostRepository postRepository;
 	private final PostCommentRepository postCommentRepository;
 	private final PostReactionRepository postReactionRepository;
+	private final AuthService authService;
 
 	@Override
 	public void addPost(PostRequestDto postrequestDto) {
 		var post = new Post();
 		post.setTitle(postrequestDto.getTitle());
 		post.setContent(postrequestDto.getContent());
+		post.setUser(this.authService.getLoggedInUser());
 		this.postRepository.save(post);
 	}
 
@@ -57,20 +57,19 @@ public class PostServiceImpl implements PostService {
 	}
 
 	@Override
-	public PageResponseDto<List<PostDto>> findAllPost(Integer pageNo, Integer pageSize) {
+	public PageResponseDto<PostDto> findAllPost(Integer pageNo, Integer pageSize) {
 
 		final var pageResponse = this.postRepository.findAll(PageRequest.of(pageNo, pageSize));
 
-		final var response = new PageResponseDto<List<PostDto>>();
+		final var response = new PageResponseDto<PostDto>();
 		response.setData(pageResponse
 				.stream()
-				.map(e -> {
+				// converting Post entity values to Post dto
+				.map(postFromDatabase -> {
 					var dto = new PostDto();
-					dto.setId(e.getPostId());
-					// set others
-
-					dto.updateTotalCommentCount();
-					dto.updateTotalReactionCount();
+					dto.setId(postFromDatabase.getPostId());
+					dto.setPostContent(postFromDatabase.getContent());
+					dto.setPostTitle(postFromDatabase.getTitle());
 					return dto;
 				}).toList());
 

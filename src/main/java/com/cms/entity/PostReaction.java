@@ -35,6 +35,10 @@ public class PostReaction extends AuditEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "post_id")
 	private Post post;
+	
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "username")
+	private User user;
 
 	@Override
 	public int hashCode() {
